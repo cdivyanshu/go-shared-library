@@ -1,21 +1,23 @@
-@Library('shared-library') _
-
 pipeline {
     agent any
-
+    
     stages {
-       stage('Load Scripts') {
+        stage('Load Bugs Analysis') {
             steps {
                 script {
                     def bugsAnalysis = load "${WORKSPACE}/src/BugsAnalysis.groovy"
-                    // Use bugsAnalysis in subsequent stages
+                    bugsAnalysis.call()
                 }
             }
         }
         stage('Build and Test') {
             steps {
-                golangci()
+                script {
+                    def golangci = load "${WORKSPACE}/vars/golangci.groovy"
+                    golangci.call()
+                }
             }
         }
+        // Add more stages as needed
     }
 }
