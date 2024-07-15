@@ -7,7 +7,7 @@ def call() {
             ${scannerHome}/bin/sonar-scanner \
             -Dsonar.projectKey=shared-lib \
             -Dsonar.sources=. \
-            -Dsonar.host.url=http://54.81.245.227:9000/ \
+            -Dsonar.host.url=http://107.22.112.152:9000/ \
             -Dsonar.login=sqp_fcda13da4f9c8dc0653597115db594d9b52751b0
         """
     }
