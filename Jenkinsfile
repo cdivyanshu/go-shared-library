@@ -9,7 +9,7 @@ pipeline {
 
     tools {
         // SonarQube Scanner configuration
-        sonarqube 'Sonar'
+        sonarqubeScanner 'Sonar' // Use the correct tool type based on Jenkins configuration
 
         // Go configuration
         go 'Go 1.20'
