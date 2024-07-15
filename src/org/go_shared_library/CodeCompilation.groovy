@@ -14,10 +14,12 @@ class CodeCompilation implements Serializable {
 
     def call() {
         script.println 'Code compilation logic goes here'
-        script.sh '''
-            go mod tidy
-            go mod download
-            go build -o employee-api .
-        '''
+        script.dir('employee-api') {
+            script.sh '''
+                go mod tidy
+                go mod download
+                go build -o employee-api .
+            '''
+        }
     }
 }
