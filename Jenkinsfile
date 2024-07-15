@@ -1,19 +1,18 @@
 @Library('shared-library') _
 
-pipeline {
-    agent any
+node {
+    // Define tools and environment variables
+    def goTool = tool name: 'Go 1.20', type: 'go'
 
-    tools {
-        go 'Go 1.20'
-    }
-
-    stages {
-        stage('code-compile') {
-            steps {
-                script {
-                    codeCompilation()
-                }
+    try {
+        stage('Code Compilation') {
+            script {
+                callCodeCompilation()
             }
         }
+        // Additional stages can be added here
+    } finally {
+        // Optionally add post-build actions here, e.g., archiving test results
+        // junit 'build/test-results/test/*.xml'
     }
 }
