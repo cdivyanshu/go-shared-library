@@ -3,8 +3,12 @@
 pipeline {
     agent any
 
-    environment {
-        SONARQUBE_TOKEN = credentials('SONARQUBE_TOKEN') // Use the credential ID here
+    tools {
+        // Dependency-Check configuration
+        dependencyCheck name: 'Dependency-Check'
+
+        // Go configuration
+        go 'Go 1.20'
     }
 
     stages {
@@ -43,6 +47,14 @@ pipeline {
                 script {
                     golangci.calldependency()
                 }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                deleteDir()
             }
         }
     }
