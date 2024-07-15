@@ -2,10 +2,14 @@
 
 pipeline {
     agent any
+    
+    environment {
+        SONARQUBE_TOKEN = credentials('SONARQUBE_TOKEN') // Replace with your actual credential ID
+    }
 
     tools {
-        // Dependency-Check configuration
-        dependencyCheck name: 'Dependency-Check'
+        // SonarQube Scanner configuration
+        sonarqube 'Sonar'
 
         // Go configuration
         go 'Go 1.20'
@@ -46,6 +50,13 @@ pipeline {
             steps {
                 script {
                     golangci.calldependency()
+                }
+            }
+        }
+        stage('dependency-check') {
+            steps {
+                script {
+                    golangci.call_dependency_check()
                 }
             }
         }
