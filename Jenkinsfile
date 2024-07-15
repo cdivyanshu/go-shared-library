@@ -2,9 +2,8 @@
 
 pipeline {
     agent any
-    
+
     tools {
-        sonarqubeScanner installations: [[$class: 'SonarQubeScannerInstallation', name: 'Sonar']]
         go 'Go 1.20'
     }
 
