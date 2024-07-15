@@ -3,15 +3,8 @@
 pipeline {
     agent any
     
-    environment {
-        SONARQUBE_TOKEN = credentials('SONARQUBE_TOKEN') // Replace with your actual credential ID
-    }
-
     tools {
-        // SonarQube Scanner configuration
         sonarqubeScanner installations: [[$class: 'SonarQubeScannerInstallation', name: 'Sonar']]
-        
-        // Go configuration
         go 'Go 1.20'
     }
 
@@ -30,15 +23,6 @@ pipeline {
                 }
             }
         }
-        /* Uncomment or adjust as needed
-        stage('static-code-analysis') {
-            steps {
-                script {
-                    golangci.sonarqubecall()
-                }
-            }
-        }
-        */
         stage('unit-tests') {
             steps {
                 script {
@@ -53,16 +37,8 @@ pipeline {
                 }
             }
         }
-        /*
-        stage('dependency-check') {
-            steps {
-                script {
-                    golangci.call_dependency_check()
-                }
-            }
-        }
     }
-*/
+
     post {
         always {
             script {
