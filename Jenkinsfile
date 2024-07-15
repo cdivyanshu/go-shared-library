@@ -15,21 +15,22 @@ pipeline {
                 }
             }
         }
-         stage('code-compilation') {
+        stage('code-compilation') {
             steps {
                 script {
                     golangci.call_compilation()
                 }
             }
         }
-    }
-/*        stage('static-code-analysis') {  // Rename this stage if needed
+        /* Uncomment or adjust as needed
+        stage('static-code-analysis') {
             steps {
                 script {
                     golangci.sonarqubecall()
                 }
             }
-        } */
+        }
+        */
         stage('unit-tests') {
             steps {
                 script {
@@ -44,6 +45,5 @@ pipeline {
                 }
             }
         }
-
-
+    }
 }
