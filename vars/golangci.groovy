@@ -2,7 +2,7 @@
 import org.go_shared_library.CodeCompilation
 
 def callCodeCompilation() {
-    new CodeCompilation().call()
+    new CodeCompilation(this).call()
 }
 
 def call() {
