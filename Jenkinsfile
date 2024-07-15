@@ -22,7 +22,7 @@ pipeline {
         stage('Execute Pipeline') {
             steps {
                 script {
-                    executePipeline(
+                    golangci(
                         gitUrl: params.gitUrl,
                         gitBranch: params.gitBranch,
                         tasks: params.tasks
