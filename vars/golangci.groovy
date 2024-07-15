@@ -28,8 +28,8 @@ def call(Map params) {
             executeCodeCompilation()
             runUnitTests()
             dependencyCheck()
-            break*/
-    }
+            break
+    }*/
 }
 
 def checkoutGitRepository(String gitUrl, String gitBranch) {
