@@ -7,39 +7,19 @@ import org.go_shared_library.*
 def call() {
     node {
         stage('Bugs Analysis') {
-            bugsAnalysis()
+            load 'src/BugsAnalysis.groovy'
         }
         stage('Code Compilation') {
-            codeCompilation()
+            load 'src/CodeCompilation.groovy'
         }
         stage('Dependency Scanning') {
-            dependencyScanning()
+            load 'src/DependencyScanning.groovy'
         }
         stage('Static Code Analysis') {
-            staticCodeAnalysis()
+            load 'src/StaticCodeAnalysis.groovy'
         }
         stage('Unit Test Stage') {
-            unitTestStage()
+            load 'src/UnitTestStage.groovy'
         }
     }
-}
-
-def bugsAnalysis() {
-    load 'src/BugsAnalysis.groovy'
-}
-
-def codeCompilation() {
-    load 'src/CodeCompilation.groovy'
-}
-
-def dependencyScanning() {
-    load 'src/DependencyScanning.groovy'
-}
-
-def staticCodeAnalysis() {
-    load 'src/StaticCodeAnalysis.groovy'
-}
-
-def unitTestStage() {
-    load 'src/UnitTestStage.groovy'
 }
