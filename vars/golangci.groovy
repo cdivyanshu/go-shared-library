@@ -30,7 +30,7 @@ def call(Map params) {
             dependencyCheck()
             break
     }*/
-}
+//}
 
 def checkoutGitRepository(String gitUrl, String gitBranch) {
     Checkout.execute(this, gitUrl, gitBranch)
