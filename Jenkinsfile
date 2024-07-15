@@ -1,21 +1,35 @@
+
+@Library('shared-lib') _
+
 pipeline {
     agent any
-    
+
+    tools {
+        go 'Go 1.20'
+    }
+    environment {
+        DEPENDENCY_CHECK_HOME = tool 'Dependency-Check' // Define DEPENDENCY_CHECK_HOME for Dependency-Check
+    }
+
     stages {
-        stage('Code Compilation') {
+        stage('code-compile') {
             steps {
-                script {
-                    def codeCompilation = load "${WORKSPACE}/src/CodeCompilation.groovy"
-                    codeCompilation.call()
-                }
+                codeCompilation()
             }
         }
-        stage('Unit Testing') {
+        stage('Unit Test') {
             steps {
-                script {
-                    def unitTestStage = load "${WORKSPACE}/src/UnitTestStage.groovy"
-                    unitTestStage.call()
-                }
+                unitTest()
+            }
+        }
+        stage('Dependency Scanning') {
+            steps {
+                dependencyScanning()
+            }
+        }
+        stage('Bugs Analysis') {
+            steps {
+                bugsAnalysis()
             }
         }
     }
