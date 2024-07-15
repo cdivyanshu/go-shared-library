@@ -1,10 +1,10 @@
-/*@Library('shared-library') _
+@Library('shared-library') _
 
 pipeline {
     agent any
 
     environment {
-        SONARQUBE_TOKEN = credentials('SONARQUBE_TOKEN') // Replace with your credential ID
+        SONARQUBE_TOKEN = credentials('SONARQUBE_TOKEN') // Use the credential ID here
     }
 
     stages {
@@ -15,24 +15,25 @@ pipeline {
                 }
             }
         }
-        stage('static-code-analysis') {
+         stage('code-compilation') {
+            steps {
+                script {
+                    golangci.call_compilation()
+                }
+            }
+        }
+    }
+/*        stage('static-code-analysis') {  // Rename this stage if needed
             steps {
                 script {
                     golangci.sonarqubecall()
                 }
             }
-        }
+        } */
         stage('unit-tests') {
             steps {
                 script {
                     golangci.call_unit_testing()
-                }
-            }
-        }
-        stage('code-coverage') {
-            steps {
-                script {
-                    golangci.call_coverage()
                 }
             }
         }
@@ -43,150 +44,6 @@ pipeline {
                 }
             }
         }
-        stage('dast-scanning') {
-            steps {
-                script {
-                    golangci.call_dast_scanning()
-                }
-            }
-        }
-        stage('static-code-analysis') {
-            steps {
-                script {
-                    golangci.call_static_code_analysis()
-                }
-            }
-        }
-        stage('code-compilation') {
-            steps {
-                script {
-                    golangci.call_compilation()
-                }
-            }
-        }
-    }
-} */
-@Library('shared-library') _
 
-pipeline {
-    agent any
 
-    environment {
-        SONARQUBE_TOKEN = credentials('SONARQUBE_TOKEN') // Use the credential ID here
-    }
-
-    stages {
-        stage('git-checkout') {
-            steps {
-                script {
-                    golangci.checkoutgit('https://github.com/OT-MICROSERVICES/attendance-api.git')
-                }
-            }
-        }
-        stage('static-code-analysis') {  // Rename this stage if needed
-            steps {
-                script {
-                    golangci.sonarqubecall()
-                }
-            }
-        }
-        stage('unit-tests') {
-            steps {
-                script {
-                    golangci.call_unit_testing()
-                }
-            }
-        }
-        stage('code-coverage') {
-            steps {
-                script {
-                    golangci.call_coverage()
-                }
-            }
-        }
-        stage('dependency-scanning') {
-            steps {
-                script {
-                    golangci.calldependency()
-                }
-            }
-        }
-        stage('dast-scanning') {
-            steps {
-                script {
-                    golangci.call_dast_scanning()
-                }
-            }
-        }
-        stage('code-compilation') {
-            steps {
-                script {
-                    golangci.call_compilation()
-                }
-            }
-        }
-    }
 }
-/*
-@Library('shared-library') _
-
-pipeline {
-    agent any
-
-    environment {
-        SONARQUBE_TOKEN = credentials('SONARQUBE_TOKEN') // Use the credential ID here
-    }
-
-    stages {
-        stage('git-checkout') {
-            steps {
-                script {
-                    golangci.checkoutgit('https://github.com/OT-MICROSERVICES/attendance-api.git')
-                }
-            }
-        }
-        stage('static-code-analysis') {  // Rename this stage if needed
-            steps {
-                script {
-                    golangci.sonarqubecall()
-                }
-            }
-        }
-        stage('unit-tests') {
-            steps {
-                script {
-                    golangci.call_unit_testing()
-                }
-            }
-        }
-        stage('code-coverage') {
-            steps {
-                script {
-                    golangci.call_coverage()
-                }
-            }
-        }
-        stage('dependency-scanning') {
-            steps {
-                script {
-                    golangci.calldependency()
-                }
-            }
-        }
-        stage('dast-scanning') {
-            steps {
-                script {
-                    golangci.call_dast_scanning()
-                }
-            }
-        }
-        stage('code-compilation') {
-            steps {
-                script {
-                    golangci.call_compilation()
-                }
-            }
-        }
-    }
-}
-*/
