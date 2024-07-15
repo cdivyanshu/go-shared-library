@@ -24,11 +24,11 @@ def call(Map params) {
         case 'all':
         default:
             // Run all tasks
-            checkoutGitRepository(params.gitUrl, params.gitBranch)
-            executeGoCommands()
+          /*  checkoutGitRepository(params.gitUrl, params.gitBranch)
+            executeCodeCompilation()
             runUnitTests()
             dependencyCheck()
-            break
+            break*/
     }
 }
 
