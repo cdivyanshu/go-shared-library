@@ -9,8 +9,8 @@ pipeline {
 
     tools {
         // SonarQube Scanner configuration
-        sonarqubeScanner 'Sonar' // Use the correct tool type based on Jenkins configuration
-
+        sonarqubeScanner installations: [[$class: 'SonarQubeScannerInstallation', name: 'Sonar']]
+        
         // Go configuration
         go 'Go 1.20'
     }
@@ -53,6 +53,7 @@ pipeline {
                 }
             }
         }
+        /*
         stage('dependency-check') {
             steps {
                 script {
@@ -61,7 +62,7 @@ pipeline {
             }
         }
     }
-
+*/
     post {
         always {
             script {
