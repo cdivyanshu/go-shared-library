@@ -2,22 +2,21 @@ pipeline {
     agent any
     
     stages {
-        stage('Load Bugs Analysis') {
+        stage('Code Compilation') {
             steps {
                 script {
-                    def bugsAnalysis = load "${WORKSPACE}/src/BugsAnalysis.groovy"
-                    bugsAnalysis.call()
+                    def codeCompilation = load "${WORKSPACE}/src/CodeCompilation.groovy"
+                    codeCompilation.call()
                 }
             }
         }
-        stage('Build and Test') {
+        stage('Unit Testing') {
             steps {
                 script {
-                    def golangci = load "${WORKSPACE}/vars/golangci.groovy"
-                    golangci.call()
+                    def unitTestStage = load "${WORKSPACE}/src/UnitTestStage.groovy"
+                    unitTestStage.call()
                 }
             }
         }
-        // Add more stages as needed
     }
 }
