@@ -24,13 +24,13 @@ def call(Map params) {
         case 'all':
         default:
             // Run all tasks
-          /*  checkoutGitRepository(params.gitUrl, params.gitBranch)
+            checkoutGitRepository(params.gitUrl, params.gitBranch)
             executeCodeCompilation()
-            runUnitTests()
+            runUnitTestStage()
             dependencyCheck()
             break
-    }*/
-//}
+    }
+}
 
 def checkoutGitRepository(String gitUrl, String gitBranch) {
     Checkout.execute(this, gitUrl, gitBranch)
@@ -43,6 +43,7 @@ def executeCodeCompilation() {
 def runUnitTestStage() {
     UnitTestStage.execute(this)
 }
+
 def dependencyCheck() {
     DependencyCheck.execute(this)
 }
