@@ -1,37 +1,45 @@
-import org.go_shared_library.BugsAnalysis
-import org.go_shared_library.CodeCompilation
-import org.go_shared_library.DependencyScanning
-import org.go_shared_library.StaticCodeAnalysis
-import org.go_shared_library.UnitTestStage
+// vars/golangci.groovy
 
-def checkoutgit(String gitUrl, String branch = 'main') {
-    git url: gitUrl, branch: branch
+package org.go_shared_library
+
+import org.go_shared_library.*
+
+def call() {
+    node {
+        stage('Bugs Analysis') {
+            bugsAnalysis()
+        }
+        stage('Code Compilation') {
+            codeCompilation()
+        }
+        stage('Dependency Scanning') {
+            dependencyScanning()
+        }
+        stage('Static Code Analysis') {
+            staticCodeAnalysis()
+        }
+        stage('Unit Test Stage') {
+            unitTestStage()
+        }
+    }
 }
 
-def sonarqubecall() {
-    new BugsAnalysis().call()
+def bugsAnalysis() {
+    load 'src/BugsAnalysis.groovy'
 }
 
-def call_unit_testing() {
-    new UnitTestStage().call()
+def codeCompilation() {
+    load 'src/CodeCompilation.groovy'
 }
 
-def call_coverage() {
-    new CodeCoverage().call()
+def dependencyScanning() {
+    load 'src/DependencyScanning.groovy'
 }
 
-def calldependency() {
-    new DependencyScanning().call()
+def staticCodeAnalysis() {
+    load 'src/StaticCodeAnalysis.groovy'
 }
 
-def call_dast_scanning() {
-    new DASTScanning().call()
-}
-
-def call_static_code_analysis() {
-    new StaticCodeAnalysis().call()
-}
-
-def call_compilation() {
-    new CodeCompilation().call()
+def unitTestStage() {
+    load 'src/UnitTestStage.groovy'
 }
