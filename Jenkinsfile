@@ -1,4 +1,3 @@
-
 @Library('shared-library') _
 
 pipeline {
@@ -14,22 +13,30 @@ pipeline {
     stages {
         stage('code-compile') {
             steps {
-                codeCompilation()
+                script {
+                    codeCompilation()
+                }
             }
         }
         stage('Unit Test') {
             steps {
-                unitTest()
+                script {
+                    unitTestStage()
+                }
             }
         }
         stage('Dependency Scanning') {
             steps {
-                dependencyScanning()
+                script {
+                    dependencyScanning()
+                }
             }
         }
         stage('Bugs Analysis') {
             steps {
-                bugsAnalysis()
+                script {
+                    bugsAnalysis()
+                }
             }
         }
     }
