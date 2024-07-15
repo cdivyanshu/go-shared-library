@@ -11,7 +11,7 @@ pipeline {
         stage('git-checkout') {
             steps {
                 script {
-                    golangci.checkoutgit('https://github.com/OT-MICROSERVICES/attendance-api.git')
+                    golangci.checkoutgit('https://github.com/OT-MICROSERVICES/employee-api.git')
                 }
             }
         }
