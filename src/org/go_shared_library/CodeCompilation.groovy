@@ -1,5 +1,3 @@
-package org.go_shared_library
-
 def call() {
     sh '''
         go mod tidy
