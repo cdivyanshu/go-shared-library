@@ -1,4 +1,4 @@
-@Library('shared-library') _
+@Library('go-shared-library') _
 
 node {
     def goTool = tool name: 'Go 1.20', type: 'go'
