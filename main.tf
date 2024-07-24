@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "ap-south-1"
-}
-
 # Declare VPC resource
 resource "aws_vpc" "ot_microservices_dev" {
   cidr_block = "10.0.0.0/16"
@@ -11,24 +7,14 @@ resource "aws_vpc" "ot_microservices_dev" {
   }
 }
 
-# Declare Subnets
+# Declare Subnet Resource
 resource "aws_subnet" "application_subnet" {
   vpc_id            = aws_vpc.ot_microservices_dev.id
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "ap-south-1a"
+  availability_zone = "us-west-2a"
 
   tags = {
     Name = "application-subnet"
-  }
-}
-
-resource "aws_subnet" "secondary_subnet" {
-  vpc_id            = aws_vpc.ot_microservices_dev.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "ap-south-1b"
-
-  tags = {
-    Name = "secondary-subnet"
   }
 }
 
@@ -52,7 +38,7 @@ resource "aws_security_group" "bastion_security_group" {
   }
 }
 
-# EMPLOYEE Security Group
+# Declare EMPLOYEE Security Group
 resource "aws_security_group" "employee_security_group" {
   vpc_id = aws_vpc.ot_microservices_dev.id
   name   = "employee-security-group"
@@ -83,7 +69,40 @@ resource "aws_security_group" "employee_security_group" {
   }
 }
 
-# Instance
+# Declare ALB Load Balancer
+resource "aws_lb" "front_end" {
+  name               = "front-end-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_security_group.id]
+  subnets            = [aws_subnet.application_subnet.id]
+
+  enable_deletion_protection = false
+  enable_http2              = true
+
+  tags = {
+    Name = "front-end-lb"
+  }
+}
+
+# Declare ALB Listener
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = aws_lb.front_end.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "404 Not Found"
+      status_code  = "404"
+    }
+  }
+}
+
+# Declare Instance
 resource "aws_instance" "employee_instance" {
   ami                   = "ami-04a81a99f5ec58529" # Replace with actual AMI
   subnet_id             = aws_subnet.application_subnet.id
@@ -96,7 +115,7 @@ resource "aws_instance" "employee_instance" {
   }
 }
 
-# Target Group and Attachment
+# Declare Target Group and Attachment
 resource "aws_lb_target_group" "employee_target_group" {
   name        = "employee-tg"
   port        = 80
@@ -111,19 +130,7 @@ resource "aws_lb_target_group_attachment" "employee_target_group_attachment" {
   port             = 8080
 }
 
-# ALB Listener
-resource "aws_lb_listener" "front_end" {
-  load_balancer_arn = aws_lb.front_end.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.employee_target_group.arn
-  }
-}
-
-# Listener Rule
+# Declare Listener Rule
 resource "aws_lb_listener_rule" "employee_rule" {
   listener_arn = aws_lb_listener.front_end.arn
   priority     = 5
@@ -140,7 +147,7 @@ resource "aws_lb_listener_rule" "employee_rule" {
   }
 }
 
-# Launch Template for Employee
+# Declare Launch Template for Employee
 resource "aws_launch_template" "employee_launch_template" {
   name = "employee-template"
 
@@ -172,7 +179,7 @@ resource "aws_launch_template" "employee_launch_template" {
   }
 }
 
-# Auto Scaling for Employee
+# Declare Auto Scaling for Employee
 resource "aws_autoscaling_group" "employee_autoscaling" {
   name                      = "employee-autoscale"
   max_size                  = 2
@@ -183,7 +190,7 @@ resource "aws_autoscaling_group" "employee_autoscaling" {
     id      = aws_launch_template.employee_launch_template.id
     version = "$Default"
   }
-  vpc_zone_identifier = [aws_subnet.application_subnet.id, aws_subnet.secondary_subnet.id]
+  vpc_zone_identifier = [aws_subnet.application_subnet.id]
   target_group_arns   = [aws_lb_target_group.employee_target_group.arn]
 }
 
