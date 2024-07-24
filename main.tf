@@ -1,33 +1,23 @@
-# Declare VPC resource
+# Define the VPC
 resource "aws_vpc" "ot_microservices_dev" {
   cidr_block = "10.0.0.0/16"
-
   tags = {
-    Name = "ot-microservices-dev"
+    Name = "ot_microservices_dev"
   }
 }
 
-# Declare ALB Security Group
-resource "aws_security_group" "alb_security_group" {
-  vpc_id = aws_vpc.ot_microservices_dev.id
-  name   = "alb-security-group"
+# Define the subnets
+resource "aws_subnet" "application_subnet" {
+  vpc_id            = aws_vpc.ot_microservices_dev.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
 
   tags = {
-    Name = "alb-security-group"
+    Name = "application_subnet"
   }
 }
 
-# Declare Bastion Security Group
-resource "aws_security_group" "bastion_security_group" {
-  vpc_id = aws_vpc.ot_microservices_dev.id
-  name   = "bastion-security-group"
-
-  tags = {
-    Name = "bastion-security-group"
-  }
-}
-
-# Declare Employee Security Group
+# Define the security group for the employee
 resource "aws_security_group" "employee_security_group" {
   vpc_id = aws_vpc.ot_microservices_dev.id
   name   = "employee-security-group"
@@ -58,79 +48,64 @@ resource "aws_security_group" "employee_security_group" {
   }
 }
 
-# Declare Subnet
-resource "aws_subnet" "application_subnet" {
-  vpc_id     = aws_vpc.ot_microservices_dev.id
-  cidr_block  = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
+# Define the security groups for ALB and Bastion
+resource "aws_security_group" "alb_security_group" {
+  vpc_id = aws_vpc.ot_microservices_dev.id
+  name   = "alb-security-group"
 
   tags = {
-    Name = "application-subnet"
+    Name = "alb-security-group"
   }
 }
 
-# Declare ALB Load Balancer
-resource "aws_lb" "front_end" {
-  name               = "front-end-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_security_group.id]
-  subnets            = [aws_subnet.application_subnet.id]
-
-  enable_deletion_protection = false
-  enable_http2              = true
+resource "aws_security_group" "bastion_security_group" {
+  vpc_id = aws_vpc.ot_microservices_dev.id
+  name   = "bastion-security-group"
 
   tags = {
-    Name = "front-end-lb"
+    Name = "bastion-security-group"
   }
 }
 
-# Declare ALB Listener
-resource "aws_lb_listener" "front_end" {
-  load_balancer_arn = aws_lb.front_end.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type = "fixed-response"
-
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "404 Not Found"
-      status_code  = "404"
-    }
-  }
-}
-
-# Instance
+# Define the EC2 instance for the employee
 resource "aws_instance" "employee_instance" {
-  ami                   = "ami-04a81a99f5ec58529" # Replace with actual AMI
-  subnet_id             = aws_subnet.application_subnet.id
+  ami                    = "ami-0cc489ff5815b317c"
+  subnet_id              = aws_subnet.application_subnet.id
   vpc_security_group_ids = [aws_security_group.employee_security_group.id]
-  instance_type         = "t2.micro"
-  key_name              = "backend"
+  instance_type          = "t2.micro"
+  key_name               = "backend"
 
   tags = {
     Name = "employee"
   }
 }
 
-# Target Group and Attachment
+# Define the target group for the load balancer
 resource "aws_lb_target_group" "employee_target_group" {
   name        = "employee-tg"
   port        = 80
   protocol    = "HTTP"
   target_type = "instance"
   vpc_id      = aws_vpc.ot_microservices_dev.id
+
+  # Add health check settings if required
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold    = 2
+    unhealthy_threshold  = 2
+  }
 }
 
+# Define the target group attachment
 resource "aws_lb_target_group_attachment" "employee_target_group_attachment" {
   target_group_arn = aws_lb_target_group.employee_target_group.arn
   target_id        = aws_instance.employee_instance.id
   port             = 8080
 }
 
-# Listener Rule
+# Define the listener rule for the load balancer
 resource "aws_lb_listener_rule" "employee_rule" {
   listener_arn = aws_lb_listener.front_end.arn
   priority     = 5
@@ -147,7 +122,7 @@ resource "aws_lb_listener_rule" "employee_rule" {
   }
 }
 
-# Launch Template for Employee
+# Define the launch template for the employee instances
 resource "aws_launch_template" "employee_launch_template" {
   name = "employee-template"
 
@@ -167,7 +142,7 @@ resource "aws_launch_template" "employee_launch_template" {
   }
 
   key_name      = "backend"
-  image_id      = "ami-0cc489ff5815b317c" # Replace with actual AMI
+  image_id      = "ami-0cc489ff5815b317c"
   instance_type = "t2.micro"
 
   tag_specifications {
@@ -179,21 +154,22 @@ resource "aws_launch_template" "employee_launch_template" {
   }
 }
 
-# Auto Scaling for Employee
+# Define the auto-scaling group for the employee
 resource "aws_autoscaling_group" "employee_autoscaling" {
   name                      = "employee-autoscale"
   max_size                  = 2
-  min_size                  = 0
-  desired_capacity          = 0
+  min_size                  = 1
+  desired_capacity          = 1
   health_check_grace_period = 300
   launch_template {
     id      = aws_launch_template.employee_launch_template.id
     version = "$Default"
   }
   vpc_zone_identifier = [aws_subnet.application_subnet.id]
-  target_group_arns   = [aws_lb_target_group.employee_target_group.arn]
+  target_group_arns = [aws_lb_target_group.employee_target_group.arn]
 }
 
+# Define the auto-scaling policy for the employee
 resource "aws_autoscaling_policy" "employee_scaling_policy" {
   name                   = "employee-autoscaling-policy"
   policy_type            = "TargetTrackingScaling"
