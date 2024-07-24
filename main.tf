@@ -1,36 +1,103 @@
-# Declare VPC resource
+# VPC
 resource "aws_vpc" "ot_microservices_dev" {
   cidr_block = "10.0.0.0/16"
-
   tags = {
     Name = "ot-microservices-dev"
   }
 }
 
-# Declare ALB Security Group
+# Subnet
+resource "aws_subnet" "application_subnet" {
+  vpc_id     = aws_vpc.ot_microservices_dev.id
+  cidr_block = "10.0.1.0/24"
+  tags = {
+    Name = "application-subnet"
+  }
+}
+
+# Load Balancer
+resource "aws_lb" "front_end" {
+  name               = "front-end"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_security_group.id]
+  subnets            = [aws_subnet.application_subnet.id]
+
+  enable_deletion_protection = false
+
+  tags = {
+    Name = "front-end"
+  }
+}
+
+# Load Balancer Listener
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = aws_lb.front_end.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "404: page not found"
+      status_code  = "404"
+    }
+  }
+}
+
+# Security Groups
 resource "aws_security_group" "alb_security_group" {
   vpc_id = aws_vpc.ot_microservices_dev.id
-  name = "alb-security-group"
+  name   = "alb-security-group"
 
   tags = {
     Name = "alb-security-group"
   }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
-# Declare Bastion Security Group
 resource "aws_security_group" "bastion_security_group" {
   vpc_id = aws_vpc.ot_microservices_dev.id
-  name = "bastion-security-group"
+  name   = "bastion-security-group"
 
   tags = {
     Name = "bastion-security-group"
   }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
-# EMPLOYEE
+# Employee resources
+
 resource "aws_security_group" "employee_security_group" {
   vpc_id = aws_vpc.ot_microservices_dev.id
-  name = "employee-security-group"
+  name   = "employee-security-group"
 
   tags = {
     Name = "employee-security-group"
@@ -51,28 +118,25 @@ resource "aws_security_group" "employee_security_group" {
   }
 
   egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    # ipv6_cidr_blocks = ["::/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-# Instance
 resource "aws_instance" "employee_instance" {
-  ami                   = "ami-04a81a99f5ec58529" # Replace with actual AMI
-  subnet_id             = aws_subnet.application_subnet.id
-  vpc_security_group_ids = [aws_security_group.employee_security_group.id]
-  instance_type         = "t2.micro"
-  key_name              = "backend"
+  ami                     = "ami-04a81a99f5ec58529"
+  subnet_id               = aws_subnet.application_subnet.id
+  vpc_security_group_ids  = [aws_security_group.employee_security_group.id]
+  instance_type           = "t2.micro"
+  key_name                = "backend"
 
   tags = {
     Name = "employee"
   }
 }
 
-# Target Group and Attachment
 resource "aws_lb_target_group" "employee_target_group" {
   name        = "employee-tg"
   port        = 80
@@ -87,7 +151,6 @@ resource "aws_lb_target_group_attachment" "employee_target_group_attachment" {
   port             = 8080
 }
 
-# Listener Rule
 resource "aws_lb_listener_rule" "employee_rule" {
   listener_arn = aws_lb_listener.front_end.arn
   priority     = 5
@@ -104,7 +167,6 @@ resource "aws_lb_listener_rule" "employee_rule" {
   }
 }
 
-# Launch Template for Employee
 resource "aws_launch_template" "employee_launch_template" {
   name = "employee-template"
 
@@ -124,7 +186,7 @@ resource "aws_launch_template" "employee_launch_template" {
   }
 
   key_name      = "backend"
-  image_id      = "ami-0cc489ff5815b317c" # Replace with actual AMI
+  image_id      = "ami-0cc489ff5815b317c"
   instance_type = "t2.micro"
 
   tag_specifications {
@@ -136,17 +198,18 @@ resource "aws_launch_template" "employee_launch_template" {
   }
 }
 
-# Auto Scaling for Employee
 resource "aws_autoscaling_group" "employee_autoscaling" {
   name                      = "employee-autoscale"
   max_size                  = 2
   min_size                  = 0
   desired_capacity          = 0
   health_check_grace_period = 300
+
   launch_template {
     id      = aws_launch_template.employee_launch_template.id
     version = "$Default"
   }
+
   vpc_zone_identifier = [aws_subnet.application_subnet.id]
   target_group_arns   = [aws_lb_target_group.employee_target_group.arn]
 }
