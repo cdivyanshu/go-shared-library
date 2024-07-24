@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-south-1"
 }
 
 resource "aws_vpc" "ot_microservices_dev" {
@@ -9,13 +9,13 @@ resource "aws_vpc" "ot_microservices_dev" {
 resource "aws_subnet" "application_subnet" {
   vpc_id            = aws_vpc.ot_microservices_dev.id
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
+  availability_zone = "ap-south-1a"
 }
 
 resource "aws_subnet" "secondary_subnet" {
   vpc_id            = aws_vpc.ot_microservices_dev.id
   cidr_block        = "10.0.2.0/24"
-  availability_zone = "us-east-1b"
+  availability_zone = "ap-south-1b"
 }
 
 resource "aws_lb" "front_end" {
@@ -39,9 +39,9 @@ resource "aws_security_group" "employee_security_group" {
 }
 
 resource "aws_instance" "employee_instance" {
-  ami           = "ami-04a81a99f5ec58529"
+  ami           = "ami-0ad21ae1d0696ad58"
   instance_type = "t2.micro"
-  key_name      = "backend"
+  key_name      = "devinfra"
   vpc_security_group_ids = [aws_security_group.employee_security_group.id]
   subnet_id     = aws_subnet.application_subnet.id
 }
@@ -58,9 +58,9 @@ resource "aws_autoscaling_group" "employee_autoscaling" {
 
 resource "aws_launch_template" "employee_launch_template" {
   name          = "employee-launch-template"
-  image_id      = "ami-04a81a99f5ec58529"
+  image_id      = "ami-0ad21ae1d0696ad58"
   instance_type = "t2.micro"
-  key_name      = "backend"
+  key_name      = "devinfra"
 }
 
 resource "aws_lb_target_group" "employee_target_group" {
