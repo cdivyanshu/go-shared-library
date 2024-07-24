@@ -36,7 +36,7 @@ resource "aws_security_group" "employee_security_group" {
 
 resource "aws_instance" "employee_instance" {
   # ami to be replaced with actual bastion ami
-  ami           = "ami-0cc489ff5815b317c"
+  ami           = "ami-04a81a99f5ec58529"
   subnet_id = aws_subnet.application_subnet.id
   vpc_security_group_ids = [aws_security_group.employee_security_group.id]
   instance_type = "t2.micro"
