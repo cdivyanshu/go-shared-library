@@ -1,6 +1,33 @@
+# Declare VPC resource
+resource "aws_vpc" "ot_microservices_dev" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "ot-microservices-dev"
+  }
+}
+
+# Declare ALB Security Group
+resource "aws_security_group" "alb_security_group" {
+  vpc_id = aws_vpc.ot_microservices_dev.id
+  name = "alb-security-group"
+
+  tags = {
+    Name = "alb-security-group"
+  }
+}
+
+# Declare Bastion Security Group
+resource "aws_security_group" "bastion_security_group" {
+  vpc_id = aws_vpc.ot_microservices_dev.id
+  name = "bastion-security-group"
+
+  tags = {
+    Name = "bastion-security-group"
+  }
+}
+
 # EMPLOYEE
-
-
 resource "aws_security_group" "employee_security_group" {
   vpc_id = aws_vpc.ot_microservices_dev.id
   name = "employee-security-group"
@@ -8,19 +35,19 @@ resource "aws_security_group" "employee_security_group" {
   tags = {
     Name = "employee-security-group"
   }
-  
+
   ingress {
     from_port        = 8080
     to_port          = 8080
     protocol         = "tcp"
-    security_groups = [aws_security_group.alb_security_group.id]
+    security_groups  = [aws_security_group.alb_security_group.id]
   }
 
   ingress {
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
-    security_groups = [aws_security_group.bastion_security_group.id]
+    security_groups  = [aws_security_group.bastion_security_group.id]
   }
 
   egress {
@@ -32,29 +59,26 @@ resource "aws_security_group" "employee_security_group" {
   }
 }
 
-# instnace
-
+# Instance
 resource "aws_instance" "employee_instance" {
-  # ami to be replaced with actual bastion ami
-  ami           = "ami-04a81a99f5ec58529"
-  subnet_id = aws_subnet.application_subnet.id
+  ami                   = "ami-04a81a99f5ec58529" # Replace with actual AMI
+  subnet_id             = aws_subnet.application_subnet.id
   vpc_security_group_ids = [aws_security_group.employee_security_group.id]
-  instance_type = "t2.micro"
-  key_name = "backend"
+  instance_type         = "t2.micro"
+  key_name              = "backend"
 
   tags = {
     Name = "employee"
   }
 }
 
-# target group and attachment
-
+# Target Group and Attachment
 resource "aws_lb_target_group" "employee_target_group" {
-  name     = "employee-tg"
-  port     = 80
-  protocol = "HTTP"
+  name        = "employee-tg"
+  port        = 80
+  protocol    = "HTTP"
   target_type = "instance"
-  vpc_id   = aws_vpc.ot_microservices_dev.id
+  vpc_id      = aws_vpc.ot_microservices_dev.id
 }
 
 resource "aws_lb_target_group_attachment" "employee_target_group_attachment" {
@@ -63,8 +87,7 @@ resource "aws_lb_target_group_attachment" "employee_target_group_attachment" {
   port             = 8080
 }
 
-# listener rule
-
+# Listener Rule
 resource "aws_lb_listener_rule" "employee_rule" {
   listener_arn = aws_lb_listener.front_end.arn
   priority     = 5
@@ -81,9 +104,7 @@ resource "aws_lb_listener_rule" "employee_rule" {
   }
 }
 
-
-# launch template for employee
-
+# Launch Template for Employee
 resource "aws_launch_template" "employee_launch_template" {
   name = "employee-template"
 
@@ -103,8 +124,7 @@ resource "aws_launch_template" "employee_launch_template" {
   }
 
   key_name      = "backend"
-  # ami to be replaced with actual ami currently not right
-  image_id      = "ami-0cc489ff5815b317c"
+  image_id      = "ami-0cc489ff5815b317c" # Replace with actual AMI
   instance_type = "t2.micro"
 
   tag_specifications {
@@ -116,21 +136,19 @@ resource "aws_launch_template" "employee_launch_template" {
   }
 }
 
-
-# auto scaling for employee
-
+# Auto Scaling for Employee
 resource "aws_autoscaling_group" "employee_autoscaling" {
   name                      = "employee-autoscale"
   max_size                  = 2
   min_size                  = 0
-  desired_capacity = 0
+  desired_capacity          = 0
   health_check_grace_period = 300
   launch_template {
     id      = aws_launch_template.employee_launch_template.id
     version = "$Default"
   }
   vpc_zone_identifier = [aws_subnet.application_subnet.id]
-  target_group_arns = [aws_lb_target_group.employee_target_group.arn]
+  target_group_arns   = [aws_lb_target_group.employee_target_group.arn]
 }
 
 resource "aws_autoscaling_policy" "employee_scaling_policy" {
@@ -138,7 +156,7 @@ resource "aws_autoscaling_policy" "employee_scaling_policy" {
   policy_type            = "TargetTrackingScaling"
   adjustment_type        = "ChangeInCapacity"
   estimated_instance_warmup = 300
-  autoscaling_group_name = aws_autoscaling_group.salary_autoscaling.name
+  autoscaling_group_name = aws_autoscaling_group.employee_autoscaling.name
 
   target_tracking_configuration {
     predefined_metric_specification {
