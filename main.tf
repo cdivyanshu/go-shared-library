@@ -139,11 +139,11 @@ resource "aws_security_group" "employee_security_group" {
 
 # Define the EC2 instance for the employee
 resource "aws_instance" "employee_instance" {
-  ami                    = "ami-0cc489ff5815b317c"
+  ami                    = "ami-0075013580f6322a1"  # Updated AMI ID
   subnet_id              = aws_subnet.application_subnet.id
   vpc_security_group_ids = [aws_security_group.employee_security_group.id]
   instance_type          = "t2.micro"
-  key_name               = "backend"
+  key_name               = "backend"  # Key name
 
   tags = {
     Name = "employee"
@@ -210,8 +210,8 @@ resource "aws_launch_template" "employee_launch_template" {
     security_groups             = [aws_security_group.employee_security_group.id]
   }
 
-  key_name      = "backend"
-  image_id      = "ami-0cc489ff5815b317c"
+  key_name      = "backend"  # Key name
+  image_id      = "ami-0075013580f6322a1"  # Updated AMI ID
   instance_type = "t2.micro"
 
   tag_specifications {
