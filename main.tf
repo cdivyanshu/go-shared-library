@@ -1,19 +1,108 @@
+provider "aws" {
+  region = "us-west-2"
+}
+
 # Define the VPC
 resource "aws_vpc" "ot_microservices_dev" {
   cidr_block = "10.0.0.0/16"
+
   tags = {
     Name = "ot_microservices_dev"
   }
 }
 
-# Define the subnets
-resource "aws_subnet" "application_subnet" {
-  vpc_id            = aws_vpc.ot_microservices_dev.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
+# Create an Internet Gateway
+resource "aws_internet_gateway" "internet_gateway" {
+  vpc_id = aws_vpc.ot_microservices_dev.id
 
   tags = {
-    Name = "application_subnet"
+    Name = "internet-gateway"
+  }
+}
+
+# Route Table
+resource "aws_route_table" "route_table" {
+  vpc_id = aws_vpc.ot_microservices_dev.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.internet_gateway.id
+  }
+
+  tags = {
+    Name = "route-table"
+  }
+}
+
+# Associate Route Table with Subnets
+resource "aws_route_table_association" "application_subnet_association" {
+  subnet_id      = aws_subnet.application_subnet.id
+  route_table_id = aws_route_table.route_table.id
+}
+
+# Subnets
+resource "aws_subnet" "application_subnet" {
+  vpc_id            = aws_vpc.ot_microservices_dev.id
+  cidr_block        = "10.0.2.0/24"
+  availability_zone = "us-west-2b"
+
+  tags = {
+    Name = "application-subnet"
+  }
+}
+
+# ALB Security Group
+resource "aws_security_group" "alb_security_group" {
+  vpc_id = aws_vpc.ot_microservices_dev.id
+  name   = "alb-security-group"
+
+  tags = {
+    Name = "alb-security-group"
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ALB Load Balancer
+resource "aws_lb" "front_end" {
+  name               = "frontend-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_security_group.id]
+  subnets            = [aws_subnet.application_subnet.id]
+
+  enable_deletion_protection = false
+
+  tags = {
+    Name = "frontend-lb"
+  }
+}
+
+# ALB Listener
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = aws_lb.front_end.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Default action"
+      status_code  = "200"
+    }
   }
 }
 
@@ -37,7 +126,7 @@ resource "aws_security_group" "employee_security_group" {
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
-    security_groups  = [aws_security_group.bastion_security_group.id]
+    security_groups  = [aws_security_group.alb_security_group.id]
   }
 
   egress {
@@ -45,25 +134,6 @@ resource "aws_security_group" "employee_security_group" {
     to_port          = 0
     protocol         = "-1"
     cidr_blocks      = ["0.0.0.0/0"]
-  }
-}
-
-# Define the security groups for ALB and Bastion
-resource "aws_security_group" "alb_security_group" {
-  vpc_id = aws_vpc.ot_microservices_dev.id
-  name   = "alb-security-group"
-
-  tags = {
-    Name = "alb-security-group"
-  }
-}
-
-resource "aws_security_group" "bastion_security_group" {
-  vpc_id = aws_vpc.ot_microservices_dev.id
-  name   = "bastion-security-group"
-
-  tags = {
-    Name = "bastion-security-group"
   }
 }
 
@@ -88,7 +158,6 @@ resource "aws_lb_target_group" "employee_target_group" {
   target_type = "instance"
   vpc_id      = aws_vpc.ot_microservices_dev.id
 
-  # Add health check settings if required
   health_check {
     path                = "/"
     interval            = 30
