@@ -41,23 +41,13 @@ resource "aws_route_table_association" "application_subnet_association" {
 }
 
 # Subnets
-resource "aws_subnet" "application_subnet_a" {
+resource "aws_subnet" "application_subnet" {
   vpc_id            = aws_vpc.ot_microservices_dev.id
   cidr_block        = "10.0.2.0/24"
-  availability_zone = "us-west-2a"
-
-  tags = {
-    Name = "application-subnet-a"
-  }
-}
-
-resource "aws_subnet" "application_subnet_b" {
-  vpc_id            = aws_vpc.ot_microservices_dev.id
-  cidr_block        = "10.0.3.0/24"
   availability_zone = "us-west-2b"
 
   tags = {
-    Name = "application-subnet-b"
+    Name = "application-subnet"
   }
 }
 
@@ -91,10 +81,7 @@ resource "aws_lb" "front_end" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_security_group.id]
-  subnets            = [
-    aws_subnet.application_subnet_a.id,
-    aws_subnet.application_subnet_b.id
-  ]
+  subnets            = [aws_subnet.application_subnet.id]
 
   enable_deletion_protection = false
 
@@ -153,7 +140,7 @@ resource "aws_security_group" "employee_security_group" {
 # Define the EC2 instance for the employee
 resource "aws_instance" "employee_instance" {
   ami                    = "ami-0075013580f6322a1"  # Updated AMI ID
-  subnet_id              = aws_subnet.application_subnet_a.id
+  subnet_id              = aws_subnet.application_subnet.id
   vpc_security_group_ids = [aws_security_group.employee_security_group.id]
   instance_type          = "t2.micro"
   key_name               = "backend"  # Key name
@@ -218,7 +205,7 @@ resource "aws_launch_template" "employee_launch_template" {
   }
 
   network_interfaces {
-    subnet_id                   = aws_subnet.application_subnet_a.id
+    subnet_id                   = aws_subnet.application_subnet.id
     associate_public_ip_address = false
     security_groups             = [aws_security_group.employee_security_group.id]
   }
@@ -247,10 +234,7 @@ resource "aws_autoscaling_group" "employee_autoscaling" {
     id      = aws_launch_template.employee_launch_template.id
     version = "$Default"
   }
-  vpc_zone_identifier = [
-    aws_subnet.application_subnet_a.id,
-    aws_subnet.application_subnet_b.id
-  ]
+  vpc_zone_identifier = [aws_subnet.application_subnet.id]
   target_group_arns = [aws_lb_target_group.employee_target_group.arn]
 }
 
